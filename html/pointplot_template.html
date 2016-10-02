@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<!-- Note: This code is almost 100% from Google's examples -->
+<html>
+  <head>
+    <meta name="viewport" content="initial-scale=1.0, user-scalable=no">
+    <meta charset="utf-8">
+    <title>INSERT_TITLE_HERE</title>
+    <style>
+      html, body {
+        height: 100%;
+        margin: 0;
+        padding: 0;
+      }
+      #map {
+        height: 100%;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="map"></div>
+    <script>
+
+      function initMap() {
+        var myLatLng = {lat: 37.67, lng: -121.7};
+        
+
+        var map = new google.maps.Map(document.getElementById('map'), {
+          zoom: 4,
+          center: myLatLng
+        });
+
+        var myPts = [
+INSERT_DATA_HERE
+                    ];
+
+        var latlngbounds = new google.maps.LatLngBounds();
+        var paths = []
+        for (var i=0; i<myPts.length; i++){
+           var myLatLon = new google.maps.LatLng(myPts[i][0], myPts[i][1]);
+           paths.push(myLatLon)
+
+           latlngbounds.extend(myLatLon)
+
+           var marker = new google.maps.Marker({
+                position: myLatLon,
+                icon: {
+                  path: google.maps.SymbolPath.CIRCLE,
+                  scale: 2
+                },
+                map: map
+           });
+           
+        }
+
+
+
+        var flightPath = new google.maps.Polyline({
+                 path: paths,
+                 geodesic: true,
+                 strokeColor: '#FF0000',
+                 strokeOpacity: 1.0,
+                 strokeWeight: 3,
+                 map: map
+           });
+
+        map.fitBounds(latlngbounds);
+      }
+    </script>
+    <script async defer
+    src="https://maps.googleapis.com/maps/api/js?key=INSERT_GOOGLE_API_KEY_HERE&callback=initMap">
+    </script>
+  </body>
+</html>
