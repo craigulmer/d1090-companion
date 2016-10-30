@@ -5,6 +5,7 @@ package main
 import (
 	"fmt"
 	"net/http"
+	"time"
 )
 
 var enableCapture bool
@@ -19,6 +20,12 @@ var dataDir string //= rootDir+"/data"
 var htmlDir string //= rootDir+"/html"
 
 var myPort string
+
+func getTodaysFilename() string {
+	t := time.Now().UTC()
+	sdate := t.Format("060102.txt")
+	return sdate
+}
 
 func AddSafeHeaders(w http.ResponseWriter) {
 	w.Header().Set("X-Content-Type-Options", "nosniff")
