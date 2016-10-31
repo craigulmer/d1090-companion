@@ -91,63 +91,69 @@ func generateStatPage(name string, plane_counts map[string]int, plane_ids map[st
 	//End of columns
 	obuf.WriteString("</td></tr></table>")
 
-	stat_fname, is_today := convertSourceToStatFilename(name)
-
-	//Check fname to see if it should be saved
-	if (stat_fname!="") && (!is_today) {
-
-		//Write to file
-		fo, err := os.Create(stat_fname)
-		if err != nil {
-			return
-		}
-		defer fo.Close()
-		fo.Write(obuf.Bytes())
-	}
-
-	//Either way, return the buffer
 	return obuf
 }
 
-func convertSourceToStatFilename(s String)  (String, bool) {
-	tokens := strings.Split(s,"/")
-	name:=tokens[len(tokens)-1]
-	
-	spot:=strings.Index(name,".")
 
-	if spot < 0 {
-		return "", false
+
+func getOrGenDigest(day_name string, digest_name string)  (obuf bytes.Buffer) {
+
+	//Get last item in path, strip off all suffixes 
+	day_name = cleanDayName(day_name)
+
+	//See if the desired digest file already exists
+	digest_fname := dataDir + "/" + day_name + "." + digest_name
+	if _, err := os.Stat(digest_fname); err==nil {
+		//Use file if already exists
+		b, _ := ioutil.ReadFile(digest_fname)
+		obuf.Write(b)	
+		return obuf
 	}
 
-	//Find out if it was for today
-	sdate := getTodaysFilename()
-	file_is_today := (sdate==name)
+	//Not available, we need to parse 
+	plane_counts, plane_ids := parseFile(day_name)
+	is_today := (getTodaysDate() == day_name)
 
-	stat_fname := dataDir + "/" + name[0:spot]+".stat"
+	//Work through all the digests
+	digests := [2]string{ "stat", "track" }
+	for _, d := range digests {
+		//When today, only do the digest we need
+		if (is_today && (d!=digest_name)) {
+			continue
+		}
+		var tbuf bytes.Buffer
+		switch d {
+		case "stat":
+			tbuf = generateStatPage(day_name, plane_counts, plane_ids)
+		case "track":
+			tbuf.Reset()
+		default:
+			//fmt.Printf("Unknown: %s\n", d)
+			tbuf.Reset()
+		}
+		
+		//Write valid results to file, if not today
+		if((!is_today) && (tbuf.Len()>0)){
+			fo, err := os.Create(dataDir+"/"+day_name+"."+d)
+			if err != nil {
+				return
+			}
+			defer fo.Close()
+			fo.Write(tbuf.Bytes())
+		}
 
-	return stat_fname, file_is_today
+		//Pass back the buffer
+		if(d==digest_name){
+			obuf = tbuf
+		}
+	}
+
+	return obuf
 }
 
 func handleStat(w http.ResponseWriter, r *http.Request){
 
-	var obuf bytes.Buffer
-
-	stat_fname, is_today := convertSourceToStatFilename(r.URL.Path)
-	if stat_fname=="" {
-		return
-	}
-
 	AddSafeHeaders(w)
-	
-	if _, err := os.Stat(stat_fname); err==nil {
-		//Use file if already exists
-		b, _ := ioutil.ReadFile(stat_fname)
-		obuf.Write(b)
-
-	} else {
-		//Generate stats file
-		plane_counts, plane_ids:=parseFile(dataDir+"/"+name)
-		obuf = generateStatPage(name, plane_counts, plane_ids)
-	}
+	obuf := getOrGenDigest(r.URL.Path, "stat")	
 	w.Write(obuf.Bytes())
 }

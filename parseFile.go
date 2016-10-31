@@ -8,30 +8,39 @@ import (
 	"compress/gzip"
 )
 
-func parseFile(fn string) (plane_counts map[string]int, plane_ids map[string]string){
+func parseFile(day_name string) (plane_counts map[string]int, plane_ids map[string]string){
 
-	f,err := os.Open(fn)
-	if err != nil {
-		return
-	}
-	defer f.Close()
+	day_name = cleanDayName(day_name)
 
 	var reader *bufio.Reader
 
-	if strings.HasSuffix(fn,".gz") {
-		gz, err := gzip.NewReader(f)
-		if err != nil{
-			return
+	//Try finding the file using different extensions
+	suffixes:=[2]string{ ".txt.gz", ".txt"}
+	for _,s := range suffixes {
+		f,err := os.Open(dataDir+"/"+day_name+s)
+		if err!= nil {
+			continue
 		}
-		defer gz.Close()
-		
-		reader = bufio.NewReader(gz)
-	} else {
-		reader = bufio.NewReader(f)
+		defer f.Close()
 
+		if s==".txt.gz" {
+			gz, err := gzip.NewReader(f)
+			if err != nil {
+				return
+			}
+			defer gz.Close()
+			reader = bufio.NewReader(gz)	
+		} else {
+			reader = bufio.NewReader(f)
+		}
+		break
+	}
+	//Check for not found
+	if reader==nil {
+		return
 	}
 
-
+	//File valid, we can create the maps now
 	plane_ids = make(map[string]string)
 	plane_counts = make(map[string]int)
 

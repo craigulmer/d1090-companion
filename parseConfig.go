@@ -51,6 +51,7 @@ func parseConfig() {
 
 	//Set the default vals so we always
 	vals:=map[string]string{
+		"enable_startup"    : "true",
 		"enable_capture"    : "true",
 		"enable_stdout"     : "false",
 		"my_ip"             : "192.168.1.1",
@@ -84,6 +85,7 @@ func parseConfig() {
 			log.Fatal("Parse error for line:\n"+line+"\n")
 		}
 	}
+	enableStartup = (vals["enable_startup"] == "true")
 	enableCapture = (vals["enable_capture"] == "true")
 	enableStdout  = (vals["enable_stdout"] == "true")
 
