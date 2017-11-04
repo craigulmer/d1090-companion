@@ -25,7 +25,6 @@ func digestLogFile(fn string) {
 	
 	fmt.Println("Digesting ",fn)
 
-
 	//See if we need to regenerate (missing files, or newer source)
 
 
@@ -33,25 +32,29 @@ func digestLogFile(fn string) {
 	plane_ids := make(map[string]string)
 	plane_counts := make(map[string]int)
 
-	f,err := os.Open(fn)
+	ffn := dataDir+"/"+fn
+	f,err := os.Open(ffn)
 	if err != nil {
 		return 
 	}
 	defer f.Close()
 
 	var reader *bufio.Reader
+	var base_name string
 
-	if strings.HasSuffix(fn,".gz") {
+	if strings.HasSuffix(ffn,".gz") {
+		base_name = ffn[0:len(ffn)-len(".txt.gz")]
+
 		gz, err := gzip.NewReader(f)
-		if err != nil{
+		if err != nil{		
 			return
 		}
 		defer gz.Close()
 		
 		reader = bufio.NewReader(gz)
 	} else {
+		base_name = ffn[0:len(ffn)-len(".txt")]
 		reader = bufio.NewReader(f)
-
 	}
 
 	for {
@@ -71,7 +74,9 @@ func digestLogFile(fn string) {
 			plane_ids[cols[1]] = cols[2]
 			count := plane_counts[cols[1]]
 			plane_counts[cols[1]] = count+1
+
 		} else if cols[0]=="3" {
+
 			//Update stats
 			count := plane_counts[cols[1]]
 			plane_counts[cols[1]] = count+1
@@ -89,10 +94,19 @@ func digestLogFile(fn string) {
 	}
 
 	//Write out stat file
-	generateStatPage(fn, plane_counts, plane_ids)
+	generateStatPage(ffn, plane_counts, plane_ids)
 
 	//Write out track file
+	fo, err := os.Create(base_name+".track")
+	if (err!=nil){
+		fmt.Println("No create\n")
+		return
+	}
+	defer fo.Close()
+	w:=bufio.NewWriter(fo)
 
-
+	for k,v := range tracks {
+		w.WriteString(k+" "+v+"\n")
+	}
 
 }

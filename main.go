@@ -60,6 +60,8 @@ func main() {
 
 	parseConfig()
 
+	digestAll();
+
 	if enableStartup {
 		go startupCompress()
 	}
